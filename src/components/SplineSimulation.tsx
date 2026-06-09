@@ -13,7 +13,7 @@ interface SplineSimulationProps {
  */
 export default function SplineSimulation({ theme = 'dark' }: SplineSimulationProps) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const splineUrl = theme === 'light' ? '/RobotLandscape.spline' : '/SplineRobot.spline';
+  const splineUrl = theme === 'light' ? './RobotLandscape.spline' : './SplineRobot.spline';
 
   useEffect(() => {
     setIsLoaded(false);
