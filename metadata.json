@@ -1,0 +1,6 @@
+{
+  "name": "ICT Lab Quiz App",
+  "description": "A liquid-glassmorphism offline quiz application for the ICT Lab, featuring randomized questions, a strict timer, local CSV data loading, and local results logging.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

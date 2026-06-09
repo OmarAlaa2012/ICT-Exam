@@ -1,0 +1,11 @@
+Question,OptionA,OptionB,OptionC,OptionD,CorrectAnswer
+"What does CPU stand for?","Central Process Unit","Computer Personal Unit","Central Processing Unit","Central Processor Utility","C"
+"Which of the following is an example of a non-volatile memory?","RAM","SRAM","DRAM","ROM","D"
+"What is the default port number used by the secure HTTP protocol (HTTPS)?","80","8080","443","22","C"
+"Which network topology connects all devices to a single central cable?","Bus","Star","Ring","Mesh","A"
+"In boolean algebra, what is the output of (A AND B) if A is True and B is False?","True","False","Null","Undefined","B"
+"Which data structure operates on a First-In-First-Out (FIFO) basis?","Stack","Queue","Trees","Graph","B"
+"What does SQL stand for?","Structured Query Language","Simple Queue List","Server Query Layer","System Query Logic","A"
+"Which protocol is responsible for assigning temporary IP addresses to devices on a network?","DNS","DHCP","FTP","SMTP","B"
+"What is the hexadecimal equivalent of the decimal number 15?","E","A","F","FF","C"
+"Which of the following is a function of an Operating System?","Memory Management","API Hosting","Physical Cable Splicing","Circuit Assembly","A"
