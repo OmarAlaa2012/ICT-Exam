@@ -216,6 +216,16 @@ export default function QuizInterface() {
 
     // Send login notification to Discord webhook
     try {
+      // Fetch IP address
+      let ipAddress = 'Unknown';
+      try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        ipAddress = ipData.ip || 'Unknown';
+      } catch (ipErr) {
+        console.warn('Failed to fetch IP address', ipErr);
+      }
+
       const embed = {
         embeds: [{
           title: 'Student Login',
@@ -223,6 +233,7 @@ export default function QuizInterface() {
           fields: [
             { name: 'Student Name', value: studentName.trim(), inline: true },
             { name: 'Class', value: studentClass, inline: true },
+            { name: 'IP Address', value: ipAddress, inline: true },
             { name: 'Timestamp', value: new Date().toLocaleString(), inline: false }
           ],
           footer: { text: 'Quiz Assessment System - Login' }
