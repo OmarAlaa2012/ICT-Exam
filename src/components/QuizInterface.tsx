@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
-import { Play, RotateCcw, Award, Clock, CheckCircle2, AlertCircle, Database, Upload, Trash2 } from 'lucide-react';
+import { Play, RotateCcw, Award, Clock, CircleCheck as CheckCircle2, CircleAlert as AlertCircle, Database, Upload, Trash2, FileText, Sparkles } from 'lucide-react';
 import { QuizQuestion, QuizResult } from '../types';
 import { DEFAULT_QUESTIONS } from '../questionsData';
 
