@@ -1,6 +1,5 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
-import '@splinetool/viewer';
 import App from './App.tsx';
 import './index.css';
 

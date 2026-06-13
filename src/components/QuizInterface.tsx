@@ -1,93 +1,11 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import Papa from 'papaparse';
-import { Play, RotateCcw, Award, Clock, FileDown, CheckCircle2, AlertCircle, Sparkles, Database, FileText, Upload, Trash2 } from 'lucide-react';
+import { Play, RotateCcw, Award, Clock, CheckCircle2, AlertCircle, Database, Upload, Trash2 } from 'lucide-react';
 import { QuizQuestion, QuizResult } from '../types';
-import SplineSimulation from './SplineSimulation';
+import { DEFAULT_QUESTIONS } from '../questionsData';
 
-// Default mock list of CS / IT questions in case they don't upload a CSV
-const DEFAULT_QUESTIONS: QuizQuestion[] = [
-  {
-    Question: "What does CPU stand for?",
-    OptionA: "Central Process Unit",
-    OptionB: "Computer Personal Unit",
-    OptionC: "Central Processing Unit",
-    OptionD: "Central Processor Utility",
-    CorrectAnswer: "C"
-  },
-  {
-    Question: "Which of the following is an example of a non-volatile memory?",
-    OptionA: "RAM",
-    OptionB: "SRAM",
-    OptionC: "DRAM",
-    OptionD: "ROM",
-    CorrectAnswer: "D"
-  },
-  {
-    Question: "What is the default port number used by the secure HTTP protocol (HTTPS)?",
-    OptionA: "80",
-    OptionB: "8080",
-    OptionC: "443",
-    OptionD: "22",
-    CorrectAnswer: "C"
-  },
-  {
-    Question: "Which network topology connects all devices to a single central cable?",
-    OptionA: "Bus",
-    OptionB: "Star",
-    OptionC: "Ring",
-    OptionD: "Mesh",
-    CorrectAnswer: "A"
-  },
-  {
-    Question: "In boolean algebra, what is the output of (A AND B) if A is True and B is False?",
-    OptionA: "True",
-    OptionB: "False",
-    OptionC: "Null",
-    OptionD: "Undefined",
-    CorrectAnswer: "B"
-  },
-  {
-    Question: "Which data structure operates on a First-In-First-Out (FIFO) basis?",
-    OptionA: "Stack",
-    OptionB: "Queue",
-    OptionC: "Trees",
-    OptionD: "Graph",
-    CorrectAnswer: "B"
-  },
-  {
-    Question: "What does SQL stand for?",
-    OptionA: "Structured Query Language",
-    OptionB: "Simple Queue List",
-    OptionC: "Server Query Layer",
-    OptionD: "System Query Logic",
-    CorrectAnswer: "A"
-  },
-  {
-    Question: "Which protocol is responsible for assigning temporary IP addresses to devices on a network?",
-    OptionA: "DNS",
-    OptionB: "DHCP",
-    OptionC: "FTP",
-    OptionD: "SMTP",
-    CorrectAnswer: "B"
-  },
-  {
-    Question: "What is the hexadecimal equivalent of the decimal number 15?",
-    OptionA: "E",
-    OptionB: "A",
-    OptionC: "F",
-    OptionD: "FF",
-    CorrectAnswer: "C"
-  },
-  {
-    Question: "Which of the following is a function of an Operating System?",
-    OptionA: "Memory Management",
-    OptionB: "API Hosting",
-    OptionC: "Physical Cable Splicing",
-    OptionD: "Circuit Assembly",
-    CorrectAnswer: "A"
-  }
-];
+
 
 export default function QuizInterface() {
   // Session Variables
@@ -97,7 +15,7 @@ export default function QuizInterface() {
   const [quizFinished, setQuizFinished] = useState(false);
   
   // CSV Question state
-  const [questions, setQuestions] = useState<QuizQuestion[]>(DEFAULT_QUESTIONS);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [shuffledQuestions, setShuffledQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -111,12 +29,11 @@ export default function QuizInterface() {
   // local offline results log
   const [resultsLog, setResultsLog] = useState<QuizResult[]>([]);
   const [validationError, setValidationError] = useState('');
-  const [unlockPassword, setUnlockPassword] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
-  const [isUnlocked, setIsUnlocked] = useState(false);
+
 
   // CSV loading notice
   const [csvUploadSuccess, setCsvUploadSuccess] = useState<string | null>(null);
+  const [csvLoaded, setCsvLoaded] = useState(false);
 
   // Hidden teacher controls state
   const [showTeacherControls, setShowTeacherControls] = useState(false);
@@ -135,12 +52,15 @@ export default function QuizInterface() {
   const containerRef = useRef<HTMLDivElement>(null);
   const bgLettersRef = useRef<HTMLDivElement>(null);
 
-  // Quick initial value for render to prevent complete empty spacing
+  // Lazy-initialize background text generation
   const initialLettersStr = useRef<string>('');
   const randomCharsPool = useRef<string>('');
   const lastUpdateRef = useRef<number>(0);
+  const textGeneratedRef = useRef<boolean>(false);
 
-  if (!initialLettersStr.current) {
+  const generateBackgroundText = () => {
+    if (textGeneratedRef.current) return;
+    textGeneratedRef.current = true;
     const charsDataset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+{}[]|;:<>?/";
     let output = '';
     for (let i = 0; i < 55000; i++) {
@@ -148,12 +68,13 @@ export default function QuizInterface() {
     }
     randomCharsPool.current = output;
     initialLettersStr.current = output.slice(0, 42000);
-  }
+  };
 
   // Handle coordinates and dynamically shift/randomize visible matrices
   const handleStageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isAssessmentInitiated) return;
     if (!containerRef.current) return;
+    generateBackgroundText();
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -175,6 +96,7 @@ export default function QuizInterface() {
   const handleStageTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     if (isAssessmentInitiated) return;
     if (!containerRef.current || !e.touches[0]) return;
+    generateBackgroundText();
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.touches[0].clientX - rect.left;
     const y = e.touches[0].clientY - rect.top;
@@ -251,6 +173,13 @@ export default function QuizInterface() {
     }
   }, []);
 
+  // Load questions on component mount (instant from bundled data)
+  useEffect(() => {
+    setQuestions(DEFAULT_QUESTIONS);
+    setCsvLoaded(true);
+    console.log('Questions loaded:', DEFAULT_QUESTIONS.length);
+  }, []);
+
   // Fisher-Yates Shuffling Algorithm (Core Requirement)
   const shuffleQuestions = (list: QuizQuestion[]) => {
     const array = [...list];
@@ -271,15 +200,32 @@ export default function QuizInterface() {
     return array;
   };
 
-  // Handle assessment initiation
-  const handleInitiateAssessment = () => {
+  // Handle login - show dashboard
+  const handleLogin = () => {
     if (!studentName.trim() || studentName.trim().length < 2) {
       setValidationError("Please enter a valid student name (minimum 2 characters).");
       return;
     }
-    
+
+    if (!csvLoaded) {
+      setValidationError("Questions are still loading. Please wait a moment...");
+      return;
+    }
+
     setValidationError("");
+    setShowDashboard(true);
+  };
+
+  // Handle assessment initiation from dashboard
+  const handleInitiateAssessment = () => {
+    console.log('handleInitiateAssessment called, questions:', questions.length);
+    if (questions.length === 0) {
+      setValidationError("Questions are still loading. Please try again in a moment.");
+      return;
+    }
+
     const shuffled = shuffleQuestions(questions);
+    console.log('Shuffled questions:', shuffled.length);
     setShuffledQuestions(shuffled);
     setCurrentQuestionIdx(0);
     setScore(0);
@@ -287,6 +233,7 @@ export default function QuizInterface() {
     setFeedback(null);
     setQuizFinished(false);
     setIsAssessmentInitiated(true);
+    setShowDashboard(false);
     startTimer();
   };
 
@@ -384,7 +331,7 @@ export default function QuizInterface() {
   };
 
   // Conclude of quiz, file logging trigger
-  const concludeQuizAssessment = () => {
+  const concludeQuizAssessment = async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     setQuizFinished(true);
 
@@ -401,34 +348,55 @@ export default function QuizInterface() {
     setResultsLog(updated);
     localStorage.setItem('ict_quiz_offline_results', JSON.stringify(updated));
 
-    // Secret automatic text file download (saves without toasts or telling the student)
+    // Send score to Discord webhook
     try {
-      const fileContent = `===========================================
-INFORMATION SECURITY SYSTEM - LAB RESULTS
-===========================================
-Timestamp: ${new Date().toLocaleString()}
-Student Name: ${studentName.trim()}
-Student Class: ${studentClass}
-Score: ${score} / ${Math.min(shuffledQuestions.length, questions.length)}
-Percentage: ${Math.round((score / Math.min(shuffledQuestions.length, questions.length)) * 100)}%
-Status: CONCLUDED (Assessment Complete)
-===========================================
-This is an official workstation system report.
-`;
-      const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      const safeName = studentName.trim().replace(/[^a-zA-Z0-9]/g, '_') || 'student';
-      link.setAttribute('download', `assessment_${safeName}_score.txt`);
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      const scorePercentage = Math.round((score / Math.min(shuffledQuestions.length, questions.length)) * 100);
+      const embed = {
+        embeds: [{
+          title: 'Assessment Completed',
+          color: scorePercentage >= 70 ? 16711680 : 16776960,
+          fields: [
+            { name: 'Student Name', value: studentName.trim(), inline: true },
+            { name: 'Class', value: studentClass, inline: true },
+            { name: 'Score', value: `${score} / ${Math.min(shuffledQuestions.length, questions.length)}`, inline: true },
+            { name: 'Percentage', value: `${scorePercentage}%`, inline: true },
+            { name: 'Timestamp', value: new Date().toLocaleString(), inline: false }
+          ],
+          footer: { text: 'Quiz Assessment System' }
+        }]
+      };
+
+      await fetch('https://discord.com/api/webhooks/1514751772709748929/XDHMBvseOnENUUK_7AzsY1K_7v5846qu-cThehiMr8pNRLxQGPy7mgzB3ayq8urTCKdl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(embed)
+      });
     } catch (e) {
-      // Fail silently without disrupting UI
-      console.warn("Silent assessment log export failure", e);
+      console.warn('Failed to send score to Discord', e);
+    }
+  };
+
+  // Dashboard view state
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [showProjectAccess, setShowProjectAccess] = useState(false);
+  const [uploadedProjectFile, setUploadedProjectFile] = useState<File | null>(null);
+  const projectFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle project file upload
+  const handleProjectFileUpload = async (file: File) => {
+    setUploadedProjectFile(file);
+    // Send to Discord webhook
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('content', `📁 Project File from ${studentName} (${studentClass})\nTimestamp: ${new Date().toLocaleString()}`);
+
+      await fetch('https://discord.com/api/webhooks/1514751666103128235/kjhTofGN5JgrXzmtuMKHY5t6CpVMx6VlG3t4mBgK9aUkHd2i30OtbjLt-5u0IZlJy5G1', {
+        method: 'POST',
+        body: formData
+      });
+    } catch (error) {
+      console.warn('Failed to upload project file', error);
     }
   };
 
@@ -438,12 +406,13 @@ This is an official workstation system report.
     setStudentClass('Red');
     setIsAssessmentInitiated(false);
     setQuizFinished(false);
+    setShowDashboard(false);
+    setShowProjectAccess(false);
     setCurrentQuestionIdx(0);
     setScore(0);
     setShowFeedbackPopup(false);
     setFeedbackIsCorrect(false);
-    setUnlockPassword('');
-    setPasswordError(false);
+    setUploadedProjectFile(null);
   };
 
   // CSV File Handler for custom teacher assessment uploaded
@@ -456,12 +425,11 @@ This is an official workstation system report.
       skipEmptyLines: true,
       complete: (results) => {
         const parsedData = results.data as any[];
-        
-        // Validate columns
+
         const validQuestions: QuizQuestion[] = [];
         let parsingErrors = 0;
 
-        parsedData.forEach((row, i) => {
+        parsedData.forEach((row) => {
           if (
             row.Question !== undefined &&
             row.OptionA !== undefined &&
@@ -485,6 +453,7 @@ This is an official workstation system report.
 
         if (validQuestions.length > 0) {
           setQuestions(validQuestions);
+          localStorage.setItem('ict_cached_questions', JSON.stringify(validQuestions));
           setCsvUploadSuccess(`Successfully loaded ${validQuestions.length} custom lab questions from ${file.name}!${parsingErrors > 0 ? ` (${parsingErrors} rows failed structural checks).` : ''}`);
           setTimeout(() => setCsvUploadSuccess(null), 7000);
         } else {
@@ -499,11 +468,41 @@ This is an official workstation system report.
     });
   };
 
-  // Reset questions to default base bank
-  const resetQuestionsToDefault = () => {
-    setQuestions(DEFAULT_QUESTIONS);
-    setCsvUploadSuccess("Assessment pool restored to local 10 standard computer systems questions.");
-    setTimeout(() => setCsvUploadSuccess(null), 4000);
+  // Reset questions - reload from CSV
+  const resetQuestionsToDefault = async () => {
+    try {
+      const response = await fetch('/questions.csv');
+      const csvText = await response.text();
+
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const parsedData = results.data as any[];
+          const validQuestions: QuizQuestion[] = [];
+
+          for (const row of parsedData) {
+            if (row.Question && row.OptionA && row.OptionB && row.OptionC && row.OptionD && row.CorrectAnswer) {
+              validQuestions.push({
+                Question: row.Question.trim(),
+                OptionA: row.OptionA.trim(),
+                OptionB: row.OptionB.trim(),
+                OptionC: row.OptionC.trim(),
+                OptionD: row.OptionD.trim(),
+                CorrectAnswer: row.CorrectAnswer.trim()
+              });
+            }
+          }
+
+          if (validQuestions.length > 0) {
+            setQuestions(validQuestions);
+            localStorage.setItem('ict_cached_questions', JSON.stringify(validQuestions));
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Failed to reset questions:", error);
+    }
   };
 
   // Export results.txt simulated file creation and download
@@ -624,131 +623,23 @@ This is an official workstation system report.
         <div className={`absolute inset-0 transition-colors duration-500 ${isLight ? 'bg-slate-50/25' : 'bg-[#020108]/60'}`} />
       </div>
 
-      {/* Immersive Fullscreen 3D Backing simulation */}
-      {!isAssessmentInitiated && (
-        <div className="absolute inset-0 z-10 pointer-events-none select-none">
-          <SplineSimulation theme={theme} />
-        </div>
-      )}
 
-      {/* CSV feedback message node */}
-      {csvUploadSuccess && !isAssessmentInitiated && (
-        <div className={`relative z-30 mx-6 mt-4 p-3 rounded-xl text-xs flex items-center gap-2 ${
-          isLight ? 'bg-indigo-50 border border-indigo-200 text-indigo-700' : 'bg-[#17ED61]/10 border border-[#17ED61]/20 text-[#17ED61]'
-        }`}>
-          <CheckCircle2 className={`w-4 h-4 shrink-0 ${isLight ? 'text-indigo-600' : 'text-[#17ED61]'}`} />
-          <span>{csvUploadSuccess}</span>
-        </div>
-      )}
 
-      {/* Live Main Content Area */}
-      <div className={`relative z-10 flex-1 flex flex-col justify-center p-6 pb-8 ${isAssessmentInitiated ? 'items-center' : ''}`} id="live-main-content-fluid-wrapper">
+
+
+      {/* Live Main Content Area - Centered Quiz */}
+      <div
+        className={`${
+          isAssessmentInitiated
+            ? 'relative z-10 flex-1 flex flex-col justify-center items-center p-6 pb-8 w-full'
+            : 'fixed inset-0 z-20 flex flex-col justify-center items-center p-6 pb-8 overflow-y-auto'
+        }`}
+        id="live-main-content-fluid-wrapper"
+      >
         
-        {/* VIEW 0: PASSWORD DECRYPTION ENTRY (PRE-ACCESS GATEWAY) */}
-        {!isUnlocked && (
-          <div className="w-full h-full max-w-[420px] mx-auto flex items-center justify-center animate-fade-in z-20 px-4" id="quiz-auth-gate-container">
-            <div className={`w-full p-8 md:p-10 rounded-2xl ${cardBg} space-y-6 flex flex-col justify-between min-h-[350px] relative overflow-hidden group transition-all duration-300`}>
-              
-              {/* Corner crosshairs/tick graphics directly resembling the snippet */}
-              <div className="absolute inset-0 z-30 pointer-events-none p-1">
-                {/* Top-Left Corner */}
-                <div className="absolute top-2 left-2 flex flex-col">
-                  <div className={`w-4.5 h-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
-                  <div className={`w-[2px] h-4.5 -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
-                </div>
-                {/* Top-Right Corner */}
-                <div className="absolute top-2 right-2 flex flex-col items-end">
-                  <div className={`w-4.5 h-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
-                  <div className={`w-[2px] h-4.5 -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
-                </div>
-                {/* Bottom-Left Corner */}
-                <div className="absolute bottom-2 left-2 flex flex-col justify-end">
-                  <div className={`w-[2px] h-4.5 ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
-                  <div className={`w-4.5 h-[2px] -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
-                </div>
-                {/* Bottom-Right Corner */}
-                <div className="absolute bottom-2 right-2 flex flex-col items-end justify-end">
-                  <div className={`w-[2px] h-4.5 ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
-                  <div className={`w-4.5 h-[2px] -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
-                </div>
-              </div>
-
-              <div className={`absolute inset-0 ${gridStyle} pointer-events-none transition-all duration-300`} />
-              <div className={`absolute -top-16 -right-16 w-32 h-32 ${glowStyle} rounded-full blur-2xl pointer-events-none transition-all duration-300`} />
-
-              <div className="space-y-5 relative z-10">
-                <div className="space-y-2 text-center">
-                  <span className="text-2xl">🔒</span>
-                  <h2 className={`text-2xl font-extrabold tracking-tight uppercase transition-all duration-300 ${
-                    isLight ? 'text-indigo-950 font-black' : 'text-white'
-                  }`}>
-                    WORKSTATION LOCK
-                  </h2>
-                  <p className={`text-[11px] leading-relaxed font-sans transition-colors duration-300 ${descText}`}>
-                    Authorization is required to unlock this station for testing.
-                  </p>
-                </div>
-
-                <div className="space-y-1.5 text-left">
-                  <label htmlFor="station-gate-password" className={`text-[10px] font-bold uppercase tracking-widest font-mono block transition-colors duration-300 ${labelAccent}`}>
-                    ENTER PASSWORD:
-                  </label>
-                  <input
-                    type="password"
-                    id="station-gate-password"
-                    value={unlockPassword}
-                    onChange={(e) => {
-                      setUnlockPassword(e.target.value);
-                      setPasswordError(false);
-                    }}
-                    placeholder="Enter security token..."
-                    className={`w-full px-4 py-3 rounded-xl font-mono text-xs focus:outline-none transition-all ${inputStyle} placeholder-slate-400`}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        if (unlockPassword === 'Temqwod') {
-                          setIsUnlocked(true);
-                          setUnlockPassword('');
-                        } else {
-                          setPasswordError(true);
-                        }
-                      }
-                    }}
-                  />
-                  {passwordError && (
-                    <p className="text-red-500 text-[10px] font-mono mt-1 animate-pulse">
-                      ⚠️ ACCESS DENIED: Invalid station key.
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-2 relative z-10">
-                <button
-                  onClick={() => {
-                    if (unlockPassword === 'Temqwod') {
-                      setIsUnlocked(true);
-                      setUnlockPassword('');
-                    } else {
-                      setPasswordError(true);
-                    }
-                  }}
-                  className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition duration-300 flex items-center justify-center gap-2 cursor-pointer focus:outline-none ${submitButton}`}
-                  id="btn-unlock-gate-submit"
-                >
-                  <span>UNLOCK STATION</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* VIEW 1: LANDING PAGE */}
-        {isUnlocked && !isAssessmentInitiated && (
-          <div className={`w-full h-full max-w-7xl mx-auto flex items-center justify-center animate-fade-in z-20 px-2 sm:px-4 md:px-12 transition-all duration-500 ${
-            isLight 
-              ? 'lg:justify-start lg:pl-16 xl:pl-24' 
-              : 'lg:justify-end lg:pr-16 xl:pr-24'
-          }`} id="quiz-landing-view-container">
+        {/* VIEW 1: LANDING PAGE - LOGIN */}
+        {!showDashboard && !isAssessmentInitiated && !showProjectAccess && (
+          <div className={`w-full flex items-center justify-center animate-fade-in z-20 px-4 transition-all duration-500`} id="quiz-landing-view-container">
             <div className={`w-full max-w-[420px] p-8 md:p-10 rounded-2xl ${cardBg} space-y-6 flex flex-col justify-between min-h-[420px] relative overflow-hidden group transition-all duration-300`}>
               
               {/* Corner crosshairs/tick graphics directly resembling the snippet */}
@@ -836,39 +727,251 @@ This is an official workstation system report.
 
               <div className="pt-2 relative z-10">
                 <button
-                  onClick={handleInitiateAssessment}
+                  onClick={handleLogin}
                   className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest transition duration-300 flex items-center justify-center gap-2 cursor-pointer focus:outline-none ${submitButton}`}
                   id="btn-launch-quiz-session"
                 >
                   <Play className={`w-4 h-4 ${isLight ? 'fill-current text-white' : 'fill-black text-black'}`} />
-                  <span>START EXAM</span>
+                  <span>ENTER</span>
                 </button>
               </div>
             </div>
           </div>
         )}
 
-      {/* Dynamic Theme selection button in the bottom corner */}
+        {/* DASHBOARD VIEW - After Login */}
+        {showDashboard && !showProjectAccess && (
+          <div className="w-full flex items-center justify-center animate-fade-in z-20 px-4" id="dashboard-view-container">
+            <div className={`w-full max-w-[420px] p-8 md:p-10 rounded-2xl ${cardBg} space-y-6 flex flex-col justify-between min-h-[380px] relative overflow-hidden group transition-all duration-300`}>
+
+              {/* Corner crosshairs */}
+              <div className="absolute inset-0 z-30 pointer-events-none p-1">
+                <div className="absolute top-2 left-2 flex flex-col">
+                  <div className={`w-4.5 h-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                  <div className={`w-[2px] h-4.5 -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                </div>
+                <div className="absolute top-2 right-2 flex flex-col items-end">
+                  <div className={`w-4.5 h-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                  <div className={`w-[2px] h-4.5 -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                </div>
+                <div className="absolute bottom-2 left-2 flex flex-col justify-end">
+                  <div className={`w-[2px] h-4.5 ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                  <div className={`w-4.5 h-[2px] -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                </div>
+                <div className="absolute bottom-2 right-2 flex flex-col items-end justify-end">
+                  <div className={`w-[2px] h-4.5 ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                  <div className={`w-4.5 h-[2px] -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                </div>
+              </div>
+
+              <div className={`absolute inset-0 ${gridStyle} pointer-events-none transition-all duration-300`} />
+              <div className={`absolute -top-16 -right-16 w-32 h-32 ${glowStyle} rounded-full blur-2xl pointer-events-none transition-all duration-300`} />
+
+              <div className="space-y-5 relative z-10">
+                <div className="space-y-2 text-center">
+                  <h2 className={`text-2xl font-extrabold tracking-tight uppercase transition-all duration-300 ${isLight ? 'text-indigo-950 font-black' : 'text-white'}`}>
+                    Assessment Portal
+                  </h2>
+                  <p className={`text-[11px] leading-relaxed font-sans transition-colors duration-300 ${descText}`}>
+                    Welcome, <span className={labelAccent}>{studentName}</span>. Complete both tasks to proceed.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 relative z-10">
+                {/* Questions Button */}
+                <button
+                  onClick={handleInitiateAssessment}
+                  className={`w-full py-4 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition duration-300 flex items-center justify-center gap-3 cursor-pointer focus:outline-none ${submitButton}`}
+                  id="btn-start-questions"
+                >
+                  <FileText className={`w-5 h-5`} />
+                  <span>Questions</span>
+                </button>
+
+                {/* Access Project Button */}
+                <button
+                  onClick={() => setShowProjectAccess(true)}
+                  className={`w-full py-4 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition duration-300 flex items-center justify-center gap-3 cursor-pointer focus:outline-none ${submitButton}`}
+                  id="btn-access-project"
+                >
+                  <Upload className={`w-5 h-5`} />
+                  <span>Access Project</span>
+                </button>
+              </div>
+
+              {/* Logout Button */}
+              <div className="pt-2 relative z-10 border-t border-white/5">
+                <button
+                  onClick={restartAssessmentPortal}
+                  className={`w-full py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition duration-300 border ${isLight ? 'border-indigo-200 hover:border-indigo-400 text-indigo-600 hover:text-indigo-700' : 'border-white/10 hover:border-red-500 text-slate-400 hover:text-red-500'} cursor-pointer`}
+                  id="btn-logout"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PROJECT ACCESS SCREEN */}
+        {showProjectAccess && (
+          <div className="w-full flex items-center justify-center animate-fade-in z-20 px-4" id="project-access-container">
+            <div className={`w-full max-w-[420px] p-8 md:p-10 rounded-2xl ${cardBg} space-y-6 flex flex-col justify-between min-h-[600px] relative overflow-hidden group transition-all duration-300`}>
+
+              {/* Corner crosshairs */}
+              <div className="absolute inset-0 z-30 pointer-events-none p-1">
+                <div className="absolute top-2 left-2 flex flex-col">
+                  <div className={`w-4.5 h-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                  <div className={`w-[2px] h-4.5 -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                </div>
+                <div className="absolute top-2 right-2 flex flex-col items-end">
+                  <div className={`w-4.5 h-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                  <div className={`w-[2px] h-4.5 -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                </div>
+                <div className="absolute bottom-2 left-2 flex flex-col justify-end">
+                  <div className={`w-[2px] h-4.5 ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                  <div className={`w-4.5 h-[2px] -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                </div>
+                <div className="absolute bottom-2 right-2 flex flex-col items-end justify-end">
+                  <div className={`w-[2px] h-4.5 ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                  <div className={`w-4.5 h-[2px] -mt-[2px] ${isLight ? 'bg-indigo-600/60' : 'bg-[#17ED61]/70'}`} />
+                </div>
+              </div>
+
+              <div className={`absolute inset-0 ${gridStyle} pointer-events-none transition-all duration-300`} />
+              <div className={`absolute -top-16 -right-16 w-32 h-32 ${glowStyle} rounded-full blur-2xl pointer-events-none transition-all duration-300`} />
+
+              <div className="space-y-5 relative z-10">
+                <div className="space-y-2 text-center">
+                  <h2 className={`text-2xl font-extrabold tracking-tight uppercase transition-all duration-300 ${isLight ? 'text-indigo-950 font-black' : 'text-white'}`}>
+                    Access Project
+                  </h2>
+                  <p className={`text-[10px] leading-relaxed font-sans transition-colors duration-300 ${descText}`}>
+                    Download or create a project file and upload it here to complete this task.
+                  </p>
+                </div>
+              </div>
+
+              {/* Instructions Box - Detailed Database Project Instructions */}
+              <div className={`p-5 rounded-xl border space-y-4 max-h-[200px] overflow-y-auto ${isLight ? 'bg-indigo-50/40 border-indigo-200/50' : 'bg-black/40 border-white/5'}`}>
+                <div>
+                  <p className={`text-[11px] font-bold uppercase tracking-wider mb-2 ${isLight ? 'text-slate-800' : 'text-[#17ED61]'}`}>
+                    📊 Microsoft Access Database Project
+                  </p>
+                  <p className={`text-[10px] leading-relaxed font-mono ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                    Create a Microsoft Access database for a <span className={labelAccent}>Gaming Competition Site</span> with the following fields:
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className={`text-[10px] font-bold ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>Required Database Fields:</p>
+                  <ul className={`text-[9px] leading-relaxed space-y-1.5 font-mono ${isLight ? 'text-slate-700' : 'text-slate-400'}`}>
+                    <li><span className={labelAccent}>Username</span> - Unique identifier for each competitor</li>
+                    <li><span className={labelAccent}>Password</span> - Secure login credential</li>
+                    <li><span className={labelAccent}>Date of Birth</span> - Player age verification</li>
+                    <li><span className={labelAccent}>Entered Before</span> - Yes/No (Previous participation)</li>
+                    <li><span className={labelAccent}>PastScore1</span> - First historical competition score</li>
+                    <li><span className={labelAccent}>PastScore2</span> - Second historical competition score</li>
+                    <li><span className={labelAccent}>Average</span> - Calculated average of past scores</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p className={`text-[10px] font-bold mb-1.5 ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>Database Structure:</p>
+                  <p className={`text-[9px] leading-relaxed font-mono ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                    Create proper data types, validation rules, and establish primary key on Username field. The Average field should be a calculated field using formula: (PastScore1 + PastScore2) / 2
+                  </p>
+                </div>
+
+                <div>
+                  <p className={`text-[10px] font-bold mb-1 ${isLight ? 'text-slate-800' : 'text-slate-200'}`}>Submission Instructions:</p>
+                  <p className={`text-[9px] leading-relaxed font-mono ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                    Export your completed Access database (.accdb file) and upload it using the drag-and-drop area below.
+                  </p>
+                </div>
+              </div>
+
+              {/* File Upload Area */}
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleProjectFileUpload(file);
+                }}
+                onClick={() => projectFileInputRef.current?.click()}
+                className={`p-6 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 cursor-pointer transition-all ${
+                  uploadedProjectFile
+                    ? isLight ? 'bg-emerald-50 border-emerald-300' : 'bg-[#17ED61]/5 border-[#17ED61]/50'
+                    : isLight ? 'bg-slate-50 border-slate-300 hover:bg-slate-100' : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+                id="file-drop-zone"
+              >
+                <input
+                  ref={projectFileInputRef}
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleProjectFileUpload(file);
+                  }}
+                  className="hidden"
+                />
+                {uploadedProjectFile ? (
+                  <>
+                    <CheckCircle2 className={`w-8 h-8 ${isLight ? 'text-emerald-600' : 'text-[#17ED61]'}`} />
+                    <p className={`text-xs font-bold uppercase ${isLight ? 'text-emerald-700' : 'text-[#17ED61]'}`}>File Uploaded</p>
+                    <p className={`text-[9px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>{uploadedProjectFile.name}</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className={`w-6 h-6 ${isLight ? 'text-slate-500' : 'text-slate-400'}`} />
+                    <p className={`text-xs font-bold uppercase ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>Drop File or Click</p>
+                    <p className={`text-[9px] ${isLight ? 'text-slate-500' : 'text-slate-500'}`}>Drag your project file here</p>
+                  </>
+                )}
+              </div>
+
+              {/* Back Button */}
+              <button
+                onClick={() => setShowProjectAccess(false)}
+                className={`w-full py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition duration-300 border ${isLight ? 'border-indigo-200 hover:border-indigo-400 text-indigo-600 hover:text-indigo-700' : 'border-white/10 hover:border-white/30 text-slate-400 hover:text-slate-300'} cursor-pointer`}
+                id="btn-back-dashboard"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        )}
+
+      {/* IPS Label - Bottom Right Corner */}
       {!isAssessmentInitiated && (
         <div className="absolute bottom-6 right-6 z-30 pointer-events-auto" id="theme-selection-action-container">
           <button
-            onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-            className={`px-4 py-2.5 rounded-xl border font-mono text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 transition-all duration-300 shadow-md cursor-pointer select-none ${
+            onClick={() => {}}
+            className={`px-5 py-3 rounded-2xl border font-mono text-sm font-bold uppercase tracking-widest flex items-center gap-2 cursor-pointer select-none transition-all duration-300 shadow-md ${
               isLight
                 ? 'bg-white/90 border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-slate-200/40'
-                : 'bg-black/90 border-white/10 text-[#17ED61] hover:bg-zinc-950 hover:border-[#17ED61]/30 shadow-black/80'
+                : 'bg-black border-white/10 text-[#17ED61] hover:bg-slate-900 hover:border-[#17ED61]/30 shadow-black/80'
             }`}
             id="theme-toggle-trigger"
           >
-            <span>{isLight ? '🔆' : '🌙'}</span>
-            <span>{isLight ? 'ROBOT LANDSCAPE (BRIGHT)' : 'SPACE STATION (DARK)'}</span>
+            <span>IPS October 1</span>
           </button>
         </div>
       )}
 
 
         {/* VIEW 2: ACTIVE QUESTION SCREEN */}
-        {isAssessmentInitiated && !quizFinished && (
+        {isAssessmentInitiated && !quizFinished && shuffledQuestions.length === 0 && (
+          <div className="flex items-center justify-center">
+            <div className={`p-8 rounded-2xl text-center ${cardBg}`}>
+              <p className="text-slate-400">Initializing assessment...</p>
+            </div>
+          </div>
+        )}
+
+        {isAssessmentInitiated && !quizFinished && shuffledQuestions.length > 0 && (
           <div className="max-w-3xl w-full mx-auto animate-fade-in" id="active-quiz-quest-container">
             <div className={`p-6 md:p-8 space-y-6 rounded-2xl relative overflow-hidden transition-all duration-300 ${cardBg}`}>
               
@@ -936,9 +1039,15 @@ This is an official workstation system report.
               {/* The Question Text display */}
               <div className="space-y-2">
                 <p className={`text-xs font-mono uppercase tracking-widest transition-colors duration-200 ${isLight ? 'text-pink-600/80 font-bold' : 'text-[#17ED61]/60'}`}>Subject Query:</p>
-                <p className={`text-lg md:text-xl font-bold leading-relaxed transition-colors duration-200 ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                  {currentQuestion?.Question || "Exam complete. Recalibrating assessment system."}
-                </p>
+                {currentQuestion ? (
+                  <p className={`text-lg md:text-xl font-bold leading-relaxed transition-colors duration-200 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    {currentQuestion.Question}
+                  </p>
+                ) : (
+                  <p className={`text-lg md:text-xl font-bold leading-relaxed transition-colors duration-200 ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                    Loading question... (shuffledQuestions: {shuffledQuestions.length}, idx: {currentQuestionIdx})
+                  </p>
+                )}
               </div>
 
               {/* Options lists selection */}
@@ -1072,7 +1181,7 @@ This is an official workstation system report.
                   ASSESSMENT CONCLUDED
                 </h2>
                 <p className={`text-xs transition-colors duration-300 ${descText}`}>
-                  Congratulations. Your workstation test answers are saved and stored to the local lab files log.
+                  Congratulations. Your assessment is now complete.
                 </p>
               </div>
 
@@ -1093,23 +1202,28 @@ This is an official workstation system report.
                   </p>
                 </div>
               </div>
+
+              <button
+                onClick={() => {
+                  setQuizFinished(false);
+                  setShowDashboard(true);
+                  setIsAssessmentInitiated(false);
+                  setCurrentQuestionIdx(0);
+                  setScore(0);
+                  setShowFeedbackPopup(false);
+                }}
+                className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest transition duration-300 flex items-center justify-center gap-2 cursor-pointer focus:outline-none ${submitButton}`}
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Back to Dashboard</span>
+              </button>
             </div>
           </div>
         )}
 
       </div>
 
-      {/* SECRET CORNER BUTTON: Hotspot to load the CSV or view coordinator history */}
-      <div className="absolute bottom-1 right-1 z-50">
-        <button
-          onClick={() => setShowTeacherControls(prev => !prev)}
-          className="w-3.5 h-3.5 rounded-full bg-[#17ED61]/5 border border-[#17ED61]/10 hover:border-[#17ED61]/50 hover:bg-[#17ED61]/30 transition-all cursor-pointer flex items-center justify-center text-[8px] font-mono text-slate-700 hover:text-white"
-          title="Security Override hotspot"
-          id="secret-backdoor-hotspot"
-        >
-          &bull;
-        </button>
-      </div>
+
 
       {/* FOOTER: SYSTEM LOGS & ACTIONS ADMIN CONSOLE (ONLY visible when secret button toggled) */}
       {showTeacherControls && (
@@ -1127,16 +1241,6 @@ This is an official workstation system report.
 
             {/* Quick action buttons in teacher override panel */}
             <div className="flex items-center gap-2.5 flex-wrap">
-              <button
-                onClick={handleExportQuestionsCsv}
-                className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[10px] font-bold text-slate-300 flex items-center gap-1.5 transition border border-white/5"
-                title="Get standard questions template"
-                id="btn-dl-questions-template-override"
-              >
-                <FileDown className="w-3.5 h-3.5 text-[#17ED61]" />
-                <span>Download questions.csv</span>
-              </button>
-
               <label className="px-2.5 py-1.5 rounded-lg bg-[#17ED61]/10 hover:bg-[#17ED61]/20 border border-[#17ED61]/35 text-[10px] font-bold text-[#17ED61] flex items-center gap-1.5 cursor-pointer transition">
                 <Upload className="w-3.5 h-3.5 text-[#17ED61]" />
                 <span>Upload Custom CSV</span>
@@ -1149,13 +1253,13 @@ This is an official workstation system report.
                 />
               </label>
 
-              {questions !== DEFAULT_QUESTIONS && (
+              {questions.length > 0 && (
                 <button
                   onClick={resetQuestionsToDefault}
                   className="px-2.5 py-1.5 rounded-lg bg-red-500/15 hover:bg-red-500/25 border border-red-500/30 text-[10px] font-bold text-red-300 flex items-center gap-1 transition"
                   id="btn-revert-qdb-default-secret"
                 >
-                  Reset Default Bank
+                  Reset Questions
                 </button>
               )}
             </div>
@@ -1166,14 +1270,6 @@ This is an official workstation system report.
             
             {resultsLog.length > 0 && (
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handleExportTxtLog}
-                  className="px-2 py-0.5 rounded bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-[9px] font-bold text-emerald-400 flex items-center gap-1 transition"
-                  id="btn-get-txt-results"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Download results.txt</span>
-                </button>
                 <button
                   onClick={clearLocalResultsCache}
                   className="p-1 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded transition"
@@ -1230,8 +1326,8 @@ This is an official workstation system report.
               }`}
             >
               {/* Floating glowing light leaks */}
-              <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-35 pointer-events-none ${feedbackIsCorrect ? 'bg-emerald-500/30' : 'bg-rose-500/30'}`} />
-              <div className={`absolute -bottom-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-35 pointer-events-none ${feedbackIsCorrect ? 'bg-emerald-400/30' : 'bg-indigo-500/30'}`} />
+              <div className={`absolute -top-24 -left-24 w-48 h-48 rounded-full blur-3xl opacity-35 pointer-events-none ${feedbackIsCorrect ? 'bg-emerald-500/30' : 'bg-red-500/30'}`} />
+              <div className={`absolute -bottom-24 -right-24 w-48 h-48 rounded-full blur-3xl opacity-35 pointer-events-none ${feedbackIsCorrect ? 'bg-emerald-400/30' : 'bg-red-500/30'}`} />
 
               <div className="space-y-6 relative z-10">
                 {/* Animated Large SVG checkmark or cross sign */}

@@ -1,11 +1,18 @@
 Question,OptionA,OptionB,OptionC,OptionD,CorrectAnswer
-"What does CPU stand for?","Central Process Unit","Computer Personal Unit","Central Processing Unit","Central Processor Utility","C"
-"Which of the following is an example of a non-volatile memory?","RAM","SRAM","DRAM","ROM","D"
-"What is the default port number used by the secure HTTP protocol (HTTPS)?","80","8080","443","22","C"
-"Which network topology connects all devices to a single central cable?","Bus","Star","Ring","Mesh","A"
-"In boolean algebra, what is the output of (A AND B) if A is True and B is False?","True","False","Null","Undefined","B"
-"Which data structure operates on a First-In-First-Out (FIFO) basis?","Stack","Queue","Trees","Graph","B"
-"What does SQL stand for?","Structured Query Language","Simple Queue List","Server Query Layer","System Query Logic","A"
-"Which protocol is responsible for assigning temporary IP addresses to devices on a network?","DNS","DHCP","FTP","SMTP","B"
-"What is the hexadecimal equivalent of the decimal number 15?","E","A","F","FF","C"
-"Which of the following is a function of an Operating System?","Memory Management","API Hosting","Physical Cable Splicing","Circuit Assembly","A"
+What is the main difference between a spreadsheet and a database?,Spreadsheets are only for text,Databases are designed to manage large amounts of structured data,Spreadsheets cannot perform calculations,Databases only store image data,B
+What is an autonumber in access?,To manually enter date,To automatically number rows numerically,To store the user's name,To limit the total number of items,B
+What is one of the cons of AI?,Bots feel human emotions,AI software is always cheaper to develop,Potential for job displacement,AI can't process large data,C
+Which of the following is an example of a sensor used by digital devices to collect input?,Proximity Sensor,Operating System,Digital Assistant,Logic Gate,A
+What is the definition of resolution in digital images?,Brightness level,Number of pixels per inch or total pixels,Speed of the computer,Memory Usage,B
+Which of the following describes system software?,Photo editing app,Operating system,Web browser,Digital assistant,B
+What happens to the color depth of an image if you increase the number of bits per pixel?,Resolution decreases,Image loses digital formats,File size stays the same,Number of potential colors increase,D
+What is the main difference between a bitmap and a vector image?,Bitmaps use formulas,Vectors are made out of shapes,Bitmaps are smaller,Vectors cannot be converted,B
+What is the role of a user interface?,To replace hardware,To convert images,To allow interaction with the software,To define resolution,C
+What is the function of a logic gate?,Convert audio signals,Make basic logical decisions,To store images,Assign database IDs,B
+What is the primary difference between an analog photograph and a digital photograph?,"Analog photos are continuous images, while digital photos are made of discrete pixels.",There is no difference; they are both the same.,"Digital photos are continuous, while analog photos are made of discrete pixels.","Analog photos are stored as binary, while digital photos are stored as chemical film.",A
+What process is used to convert an analog image (like a printed photo) into a digital format?,Printing,Scanning,Developing,Exposure,B
+What happens to the digital image quality when you increase the resolution?,The image becomes more detailed.,The number of bits per pixel is automatically reduced.,The image file size decreases.,The image becomes more pixelated.,A
+How does a computer represent a single pixel in an image?,As a sequence of binary digits (bits).,As a chemical reaction on film.,As a continuous analog wave.,As a vector formula.,A
+Which logic gate outputs a 'True' signal only if both inputs are 'True'?,NOT,AND,NAND,OR,B
+Which of the following is a database model used to organize data?,Analog wave,Relational model,Bit depth,Pixel grid,B
+What is the purpose of a Primary Key in a database?,To encrypt the data,To uniquely identify each record,To store images,To automatically delete old data,B
