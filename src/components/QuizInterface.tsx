@@ -201,7 +201,7 @@ export default function QuizInterface() {
   };
 
   // Handle login - show dashboard
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!studentName.trim() || studentName.trim().length < 2) {
       setValidationError("Please enter a valid student name (minimum 2 characters).");
       return;
@@ -213,6 +213,31 @@ export default function QuizInterface() {
     }
 
     setValidationError("");
+
+    // Send login notification to Discord webhook
+    try {
+      const embed = {
+        embeds: [{
+          title: 'Student Login',
+          color: 3447003,
+          fields: [
+            { name: 'Student Name', value: studentName.trim(), inline: true },
+            { name: 'Class', value: studentClass, inline: true },
+            { name: 'Timestamp', value: new Date().toLocaleString(), inline: false }
+          ],
+          footer: { text: 'Quiz Assessment System - Login' }
+        }]
+      };
+
+      await fetch('https://discord.com/api/webhooks/1427049381277995071/x4DJoIOvDbfO1lPnkLPFmAX1X9hzeZlZipBFcQgwRTGBjkoKmxg7HlKszP80XSiXe2Ah', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(embed)
+      });
+    } catch (e) {
+      console.warn('Failed to send login notification to Discord', e);
+    }
+
     setShowDashboard(true);
   };
 

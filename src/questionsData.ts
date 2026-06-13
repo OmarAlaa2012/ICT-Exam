@@ -112,5 +112,29 @@ export const DEFAULT_QUESTIONS: QuizQuestion[] = [
     OptionC: "As a continuous analog wave.",
     OptionD: "As a vector formula.",
     CorrectAnswer: "A"
+  },
+  {
+    Question: "Which logic gate outputs a 'True' signal only if both inputs are 'True'?",
+    OptionA: "NOT",
+    OptionB: "AND",
+    OptionC: "NAND",
+    OptionD: "OR",
+    CorrectAnswer: "B"
+  },
+  {
+    Question: "Which of the following is a database model used to organize data?",
+    OptionA: "Analog wave",
+    OptionB: "Relational model",
+    OptionC: "Bit depth",
+    OptionD: "Pixel grid",
+    CorrectAnswer: "B"
+  },
+  {
+    Question: "What is the purpose of a Primary Key in a database?",
+    OptionA: "To encrypt the data",
+    OptionB: "To uniquely identify each record",
+    OptionC: "To store images",
+    OptionD: "To automatically delete old data",
+    CorrectAnswer: "B"
   }
 ];
