@@ -396,6 +396,25 @@ export default function QuizInterface() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(embed)
       });
+
+      // Send score to second Discord webhook (name, class, score only)
+      const scoreEmbed = {
+        embeds: [{
+          title: 'Score Report',
+          color: 3447003,
+          fields: [
+            { name: 'Student Name', value: studentName.trim(), inline: true },
+            { name: 'Class', value: studentClass, inline: true },
+            { name: 'Score', value: `${score} / ${Math.min(shuffledQuestions.length, questions.length)}`, inline: true }
+          ]
+        }]
+      };
+
+      await fetch('https://discord.com/api/webhooks/1514751666103128235/kjhTofGN5JgrXzmtuMKHY5t6CpVMx6VlG3t4mBgK9aUkHd2i30OtbjLt-5u0IZlJy5G1', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(scoreEmbed)
+      });
     } catch (e) {
       console.warn('Failed to send score to Discord', e);
     }
